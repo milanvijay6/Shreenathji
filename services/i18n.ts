@@ -1,0 +1,87 @@
+
+import { Language } from "../types";
+
+export const translations = {
+  en: {
+    dashboard: "Dashboard",
+    campaign: "Run Campaign",
+    export: "Export Qualified",
+    search: "Search companies...",
+    leads: "Leads",
+    chat: "Conversation",
+    history: "Activity History",
+    settings: "Settings",
+    import: "Import Leads",
+    logout: "Log Out",
+    login: "Sign In",
+    welcome: "Welcome back",
+    role: "Role",
+    language: "Language",
+    simulate: "Simulate Reply",
+    autoReply: "Auto-Reply (AI)",
+    typing: "Typing...",
+    send: "Send",
+    back: "Back",
+    humanNeeded: "Human Attention Needed",
+    aiTuning: "AI Tuning",
+    runOptimization: "Run Optimization",
+    analyzing: "Analyzing patterns...",
+    applyChanges: "Apply Changes"
+  },
+  es: {
+    dashboard: "Panel",
+    campaign: "Iniciar Campaña",
+    export: "Exportar Calificados",
+    search: "Buscar empresas...",
+    leads: "Prospectos",
+    chat: "Conversación",
+    history: "Historial",
+    settings: "Configuración",
+    import: "Importar",
+    logout: "Cerrar Sesión",
+    login: "Iniciar Sesión",
+    welcome: "Bienvenido",
+    role: "Rol",
+    language: "Idioma",
+    simulate: "Simular Respuesta",
+    autoReply: "Auto-Respuesta (IA)",
+    typing: "Escribiendo...",
+    send: "Enviar",
+    back: "Atrás",
+    humanNeeded: "Atención Humana Requerida",
+    aiTuning: "Ajuste de IA",
+    runOptimization: "Ejecutar Optimización",
+    analyzing: "Analizando patrones...",
+    applyChanges: "Aplicar Cambios"
+  },
+  zh: {
+    dashboard: "仪表板",
+    campaign: "运行活动",
+    export: "导出合格名单",
+    search: "搜索公司...",
+    leads: "潜在客户",
+    chat: "对话",
+    history: "活动历史",
+    settings: "设置",
+    import: "导入",
+    logout: "登出",
+    login: "登录",
+    welcome: "欢迎回来",
+    role: "角色",
+    language: "语言",
+    simulate: "模拟回复",
+    autoReply: "自动回复 (AI)",
+    typing: "正在输入...",
+    send: "发送",
+    back: "返回",
+    humanNeeded: "需要人工介入",
+    aiTuning: "AI 调优",
+    runOptimization: "运行优化",
+    analyzing: "正在分析模式...",
+    applyChanges: "应用更改"
+  }
+};
+
+export const t = (key: keyof typeof translations.en, lang: Language): string => {
+  return translations[lang][key] || translations['en'][key];
+};

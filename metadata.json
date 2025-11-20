@@ -1,0 +1,5 @@
+{
+  "name": "GlobalReach - Exporter Lead Automator",
+  "description": "An AI-powered CRM that automates international importer outreach via Gemini. Ingests lead lists, manages cross-platform conversations (WhatsApp, WeChat, Email), and auto-qualifies interested buyers.",
+  "requestFramePermissions": []
+}

@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: globalreach-dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000" # React Dev Server
+      - "4000:4000" # Backend API
+    environment:
+      - NODE_ENV=development
+    # Keep container running
+    command: tail -f /dev/null
