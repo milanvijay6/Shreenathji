@@ -1,4 +1,3 @@
-
 import { test, expect, _electron as electron } from '@playwright/test';
 import path from 'path';
 
@@ -7,9 +6,9 @@ test.describe('Electron App E2E', () => {
 
   test.beforeAll(async () => {
     // Launch Electron app
-    // Using process.cwd() to resolve path safely without relying on __dirname which might be missing in module scope
+    // Using path.resolve to get absolute path
     electronApp = await electron.launch({
-      args: [path.join(process.cwd(), 'electron/main.js')]
+      args: [path.resolve('electron/main.js')]
     });
   });
 
