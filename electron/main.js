@@ -30,7 +30,7 @@ const logger = winston.createLogger({
   ]
 });
 
-// --- SIMPLE CONFIG STORE (Replacement for electron-store) ---
+// --- SIMPLE CONFIG STORE ---
 const configPath = path.join(app.getPath('userData'), CONFIG_FILE_NAME);
 
 function getConfig(key, defaultValue) {
@@ -72,19 +72,33 @@ function startServer(startingPort) {
   appServer.use(express.urlencoded({ extended: true }));
 
   // Static Files
-  // NOTE: We are serving from 'build' inside the electron folder because we xcopy dist there.
+  // This points to 'electron/build'
   const buildPath = path.join(__dirname, 'build');
+  
+  // Check if build exists
+  if (!fs.existsSync(buildPath)) {
+    logger.error(`CRITICAL: Build directory not found at ${buildPath}. Run 'npm run build:react' first.`);
+  } else {
+    logger.info(`Serving static files from: ${buildPath}`);
+  }
+
   appServer.use(express.static(buildPath));
 
-  logger.info(`Serving static files from: ${buildPath}`);
-
-  // Webhook Routes (Placeholder)
+  // Webhook Routes
   appServer.post('/webhooks/whatsapp', (req, res) => {
     logger.info('WhatsApp webhook received');
+    // Forward to renderer if window exists
+    if (mainWindow) {
+      mainWindow.webContents.send('webhook-payload', { 
+        channel: 'WhatsApp', 
+        payload: req.body, 
+        timestamp: Date.now() 
+      });
+    }
     res.sendStatus(200);
   });
 
-  // Fallback for React Router (SPA)
+  // Fallback for React Router
   appServer.get('*', (req, res) => {
     if (req.path.startsWith('/webhooks/')) return res.sendStatus(404);
     
@@ -92,7 +106,9 @@ function startServer(startingPort) {
     if (fs.existsSync(indexPath)) {
       res.sendFile(indexPath);
     } else {
-      res.status(404).send(`Application not built. Expected index.html at: ${indexPath}`);
+      const errorMsg = `Application not built. Expected index.html at: ${indexPath}`;
+      logger.error(errorMsg);
+      res.status(404).send(errorMsg);
     }
   });
 
@@ -100,7 +116,7 @@ function startServer(startingPort) {
     const tryListen = (port) => {
       const server = appServer.listen(port, '127.0.0.1', () => {
         logger.info(`Local backend running on http://localhost:${port}`);
-        setConfig('serverPort', port); // Save actual port used
+        setConfig('serverPort', port);
         resolve({ server, port });
       }).on('error', (err) => {
         if (err.code === 'EADDRINUSE') {
@@ -119,7 +135,7 @@ function startServer(startingPort) {
 let mainWindow;
 
 async function createWindow() {
-  // 1. Start Express
+  // 1. Start Express Server
   let port = DEFAULT_PORT;
   try {
     const result = await startServer(DEFAULT_PORT);
@@ -127,7 +143,7 @@ async function createWindow() {
     port = result.port;
   } catch (err) {
     logger.error('Failed to start Express server', err);
-    dialog.showErrorBox('Server Error', 'Failed to start local backend.');
+    dialog.showErrorBox('Server Error', 'Failed to start local backend. Check logs.');
     return;
   }
 
@@ -138,17 +154,19 @@ async function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js'), // Ensure you have a preload.js or remove this line if not used yet
+      preload: path.join(__dirname, 'preload.js'),
       sandbox: true
     }
   });
 
-  // 3. Load URL
+  // 3. Load from Local Express Server
   const url = `http://localhost:${port}`;
-  mainWindow.loadURL(url).catch(err => logger.error('Failed to load URL', err));
-
-  // 4. DevTools (Optional: Open if in dev mode or if needed)
-  // mainWindow.webContents.openDevTools();
+  logger.info(`Loading Electron window from: ${url}`);
+  
+  mainWindow.loadURL(url).catch(err => {
+    logger.error('Failed to load URL', err);
+    dialog.showErrorBox('Load Error', `Failed to load application at ${url}`);
+  });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
@@ -173,14 +191,12 @@ app.on('window-all-closed', () => {
 });
 
 // --- IPC HANDLERS ---
-
 ipcMain.handle('get-config', (event, key) => getConfig(key));
 ipcMain.handle('set-config', (event, key, value) => setConfig(key, value));
 
 ipcMain.handle('secure-save', async (event, key, value) => {
   if (safeStorage.isEncryptionAvailable()) {
     const encrypted = safeStorage.encryptString(value);
-    // Save encrypted buffer as hex string in config
     setConfig(`secure_${key}`, encrypted.toString('hex'));
     return true;
   }
@@ -201,10 +217,25 @@ ipcMain.handle('secure-load', async (event, key) => {
   return null;
 });
 
+ipcMain.handle('reset-app', async () => {
+  try {
+    if (fs.existsSync(configPath)) {
+      fs.unlinkSync(configPath);
+      return true;
+    }
+    return false;
+  } catch (error) {
+    logger.error('Reset failed', error);
+    return false;
+  }
+});
+
+ipcMain.handle('get-app-version', () => app.getVersion());
+
 ipcMain.handle('create-backup', async (event, dataString) => {
   const { canceled, filePath } = await dialog.showSaveDialog({
     title: 'Save Encrypted Backup',
-    filters: [{ name: 'Backup', extensions: ['bkp'] }]
+    filters: [{ name: 'Backup', extensions: ['grbk'] }]
   });
   if (canceled || !filePath) return { success: false };
 
@@ -224,7 +255,7 @@ ipcMain.handle('create-backup', async (event, dataString) => {
 
 ipcMain.handle('restore-backup', async () => {
   const { canceled, filePaths } = await dialog.showOpenDialog({
-    filters: [{ name: 'Backup', extensions: ['bkp'] }],
+    filters: [{ name: 'Backup', extensions: ['grbk'] }],
     properties: ['openFile']
   });
   if (canceled || filePaths.length === 0) return { success: false };
@@ -240,4 +271,9 @@ ipcMain.handle('restore-backup', async () => {
   } catch (err) {
     return { success: false, error: err.message };
   }
+});
+
+ipcMain.handle('get-log-path', () => path.join(logDir, 'combined.log'));
+ipcMain.on('log-message', (event, level, message, data) => {
+  logger.log(level, message, data);
 });
