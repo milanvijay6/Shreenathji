@@ -7,6 +7,7 @@
   "description": "AI-powered Exporter CRM and Lead Automator",
   "scripts": {
     "start": "react-scripts start",
+    "start:web": "node server.js",
     "build": "react-scripts build",
     "test": "npm run test:unit",
     "test:unit": "jest",
@@ -63,7 +64,10 @@
     "express": "^4.18.2",
     "recharts": "^2.10.3",
     "electron-store": "^8.1.0",
-    "electron-updater": "^6.1.7"
+    "electron-updater": "^6.1.7",
+    "compression": "^1.7.4",
+    "helmet": "^7.1.0",
+    "basic-auth": "^2.0.1"
   },
   "devDependencies": {
     "electron": "^28.1.0",
