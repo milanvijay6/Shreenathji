@@ -8,7 +8,7 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build:react": "vite build --outDir electron/build --emptyOutDir",
+    "build:react": "vite build",
     "preview": "vite preview",
     "start": "electron .",
     "build": "electron-builder"
@@ -19,7 +19,6 @@
     "electron-updater": "^6.1.7",
     "express": "^4.18.2",
     "helmet": "^7.1.0",
-    "sqlite3": "^5.1.7",
     "winston": "^3.11.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
